@@ -378,7 +378,7 @@ define(['requirejs'], function(requirejs, undefined) {
       },
       
 //FIXME: fix this test
-/*
+
       {
         desc: "share gets called after geting a public path without touching the fullfilments",
         run: function(env, test) {
@@ -387,8 +387,10 @@ define(['requirejs'], function(requirejs, undefined) {
             test.assertAnd(status, 200, 'status = '+status);
             test.assertAnd(rev,'rev',rev)
             test.assertAnd(body, 'response-body', 'body = '+ body);
-          
-            //test.assert(env.connectedClient._itemRefs['/public/foo'],'http://dropbox.shareing/url');
+
+            //test.assertAnd(env.connectedClient._itemRefs['/public/foo'],'http://dropbox.shareing/url', "instead found " + 
+            //            JSON.stringify(env.connectedClient._itemRefs) );
+            //test.done();
           })
           var getReq = XMLHttpRequest.instances.shift();
           getReq._responseHeaders['x-dropbox-metadata'] = JSON.stringify({
@@ -398,8 +400,10 @@ define(['requirejs'], function(requirejs, undefined) {
           getReq.responseText = 'response-body';
           getReq._responseHeaders['Content-Type'] = 'text/plain; charset=UTF-8';
           getReq._onload();
-          setTimeout(function(){
+          setInterval(function(){
             var shareReq =  XMLHttpRequest.instances.shift();
+            if(!shareReq) return;
+            test.assertTypeAnd(shareReq, 'object', "No sharing request found");
             shareReq.responseText = JSON.stringify( {
               url: 'http://dropbox.shareing/url'
             } );
@@ -407,7 +411,6 @@ define(['requirejs'], function(requirejs, undefined) {
           }, 100);
         }
       },
-*/
       {
         desc: "dropbox Adapter sets and removes EventHandlers",
         run: function(env, test){

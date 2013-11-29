@@ -135,7 +135,6 @@
 
     this.rs = rs;
     this.connected = false;
-    this.rs = rs;
     var self = this;
 
     onErrorCb = function(error){
@@ -144,7 +143,7 @@
       }
     };
 
-    RS.eventHandling(this, 'change', 'connected');
+    RS.eventHandling(this, 'connected');
     rs.on('error', onErrorCb);
 
     this.clientId = rs.apiKeys.dropbox.api_key;
@@ -435,12 +434,13 @@
       var self = this;
       if (path.match(/^\/public\/.*[^\/]$/) && typeof this._itemRefs[path] === 'undefined') {
         console.log('shareing this one ', path);
-        promise.then(function(){
+        return promise.then(function(){
+          console.log('calling share now');
           var args = Array.prototype.slice.call(arguments);
           var p = promising();
-          console.log('calling share now');
+          
           self.share(path).then(function() {
-            console.log('shareing fullfilled promise',arguments);
+            console.log('shareing fulfilled promise',arguments);
             p.fulfill.apply(p,args);
           }, function(err) {
             console.log("shareing failed" , err);
@@ -448,8 +448,9 @@
           });
           return p;
         });
+      } else {
+        return promise;
       }
-      return promise;
     },
 
     /**
@@ -461,7 +462,7 @@
       var url = "https://api.dropbox.com/1/media/auto"+path;
       var promise = promising();
       var itemRefs = this._itemRefs;
-
+      console.log("share sends request")
       // requesting shareing url
       this._request('POST', url, {}, function(err, resp){
         if(err) {
