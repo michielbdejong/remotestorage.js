@@ -328,41 +328,12 @@
     },
 
     /**
-     * Method: enableLog
-     *
-     * enable logging
-     */
-    enableLog: function() {
-      RemoteStorage._log = true;
-    },
-
-    /**
-     * Method: disableLog
-     *
-     * disable logging
-     */
-    disableLog: function() {
-      RemoteStorage._log = false;
-    },
-
-    /**
      * Method: log
      *
      * The same as <RemoteStorage.log>.
      */
     log: function() {
       RemoteStorage.log.apply(RemoteStorage, arguments);
-    },
-
-    setApiKeys: function(type, keys) {
-      if (keys) {
-        this.apiKeys[type] = keys;
-      } else {
-        delete this.apiKeys[type];
-      }
-      if (haveLocalStorage) {
-        localStorage[this._identifier+'api-keys'] = JSON.stringify(this.apiKeys);
-      }
     },
 
     /**
@@ -629,6 +600,41 @@
       return this.remote.connected;
     }
   });
+  
+  
+  /**
+   * Method: enableLog
+   *
+   * enable logging
+   */
+  RemoteStorage.enableLog =  function() {
+    RemoteStorage._log = true;
+  };
+  RemoteStorage.prototype.enableLog = RemoteStorage.enableLog;
+
+  /**
+   * Method: disableLog
+   *
+   * disable logging
+   */
+  RemoteStorage.disableLog =  function() {
+    RemoteStorage._log = false;
+  };
+  RemoteStorage.prototype.disableLog = RemoteStorage.disableLog;
+
+  
+  RemoteStorage.setApiKeys =  function(type, keys) {
+    if (keys) {
+      RemoteStorage.prototype.apiKeys[type] = keys;
+    } else {
+      delete RemoteStorage.prototype.apiKeys[type];
+    }
+    if (haveLocalStorage) {
+      localStorage['remotestorage:api-keys'] = JSON.stringify(RemoteStorage.prototype.apiKeys);
+    }
+  };
+  RemoteStorage.prototype.setApiKeys = RemoteStorage.setApiKeys;
+
 
   /**
    * Property: access
