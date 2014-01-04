@@ -70,6 +70,18 @@
     };
   }
 
+  function addQuotes(str) {
+    if(str === '*') {
+      return '*';
+    } else {
+      return '"' + str +'"';
+    }
+  }
+
+  function stripQuotes(str) {
+    return str.substring(1, str.length-1);
+  }
+
   function readBinaryData(content, mimeType, callback) {
     var blob = new Blob([content], { type: mimeType });
     var reader = new FileReader();
@@ -209,13 +221,13 @@
             promise.fulfill(response.status);
           } else if ([201, 204, 304].indexOf(response.status) >= 0 ||
                      (response.status === 200 && method !== 'GET')) {
-            revision = response.getResponseHeader('ETag');
+            revision = stripQuotes(response.getResponseHeader('ETag'));
             promise.fulfill(response.status, undefined, undefined, revision);
           } else {
             var mimeType = response.getResponseHeader('Content-Type');
             var body;
             if (getEtag) {
-              revision = response.getResponseHeader('ETag');
+              revision = stripQuotes(response.getResponseHeader('ETag'));
             } else {
               revision = response.status === 200 ? fakeRevision : undefined;
             }
