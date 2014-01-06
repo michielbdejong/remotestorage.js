@@ -313,7 +313,7 @@ define(['requirejs'], function(requirejs) {
       },
 
       {
-        desc: "#setRevision updates `cached` items of parent directories",
+        desc: "#setRevision updates `cached` items of parent folders",
         run: function(env, test) {
           env.ls.setRevision('/foo/bar/baz', 'a1b2c3').then(function() {
             test.assertAnd(env.ls._getMetas('/foo/bar/'), { 'baz': { ETag: 'a1b2c3' } });
