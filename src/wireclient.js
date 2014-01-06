@@ -70,68 +70,6 @@
     };
   }
 
-  function addQuotes(str) {
-    if(str === '*') {
-      return '*';
-    } else {
-      return '"' + str +'"';
-    }
-  }
-
-  function stripQuotes(str) {
-    return str.substring(1, str.length-1);
-  }
-
-  function request(method, uri, token, headers, body, getEtag, fakeRevision) {
-    if ((method === 'PUT' || method === 'DELETE') && uri[uri.length - 1] === '/') {
-      throw "Don't " + method + " on folders!";
-    }
-
-    var promise = promising();
-    var revision;
-
-    headers['Authorization'] = 'Bearer ' + token;
-
-    RS.WireClient.request(method, uri, {
-      body: body,
-      headers: headers
-    }, function(error, response) {
-      if (error) {
-        promise.reject(error);
-      } else {
-        if ([401, 403, 404, 412].indexOf(response.status) >= 0) {
-          promise.fulfill(response.status);
-        } else if ([201, 204, 304].indexOf(response.status) >= 0 ||
-                   (response.status === 200 && method !== 'GET')) {
-          revision = stripQuotes(response.getResponseHeader('ETag'));
-          promise.fulfill(response.status, undefined, undefined, revision);
-        } else {
-          var mimeType = response.getResponseHeader('Content-Type');
-          var body;
-          if (getEtag) {
-            revision = stripQuotes(response.getResponseHeader('ETag'));
-          } else {
-            revision = response.status === 200 ? fakeRevision : undefined;
-          }
-
-          if ((! mimeType) || mimeType.match(/charset=binary/)) {
-            RS.WireClient.readBinaryData(response.response, mimeType, function(result) {
-              promise.fulfill(response.status, result, mimeType, revision);
-            });
-          } else {
-            if (mimeType && mimeType.match(/^application\/json/)) {
-              body = JSON.parse(response.responseText);
-            } else {
-              body = response.responseText;
-            }
-            promise.fulfill(response.status, body, mimeType, revision);
-          }
-        }
-      }
-    });
-    return promise;
-  }
-
   function readBinaryData(content, mimeType, callback) {
     var blob = new Blob([content], { type: mimeType });
     var reader = new FileReader();
@@ -169,7 +107,11 @@
      *   fired when the wireclient connect method realizes that it is
      *   in posession of a token and a href
      **/
+<<<<<<< HEAD
     RS.eventHandling(this, 'change', 'connected', 'not-connected');
+=======
+    RS.eventHandling(this, 'change', 'connected', 'wire-busy', 'wire-done');
+>>>>>>> rename-busy-events
 
     onErrorCb = function(error){
       if (error instanceof RemoteStorage.Unauthorized) {
@@ -233,6 +175,73 @@
      *   // -> 'draft-dejong-remotestorage-01'
      */
 
+    _request: function(method, uri, token, headers, body, getEtag, fakeRevision) {
+      if ((method === 'PUT' || method === 'DELETE') && uri[uri.length - 1] === '/') {
+        throw "Don't " + method + " on directories!";
+      }
+
+      var promise = promising();
+      var revision;
+      var reqType;
+      var self = this;
+
+      headers['Authorization'] = 'Bearer ' + token;
+
+      this._emit('wire-busy', {
+        method: method,
+        isFolder: isDir(uri)
+      });
+
+      RS.WireClient.request(method, uri, {
+        body: body,
+        headers: headers
+      }, function(error, response) {
+        if (error) {
+          self._emit('wire-done', {
+            method: method,
+            isFolder: isDir(uri),
+            success: false
+          });
+          promise.reject(error);
+        } else {
+          self._emit('wire-done', {
+            method: method,
+            isFolder: isDir(uri),
+            success: true
+          });
+          if ([401, 403, 404, 412].indexOf(response.status) >= 0) {
+            promise.fulfill(response.status);
+          } else if ([201, 204, 304].indexOf(response.status) >= 0 ||
+                     (response.status === 200 && method !== 'GET')) {
+            revision = response.getResponseHeader('ETag');
+            promise.fulfill(response.status, undefined, undefined, revision);
+          } else {
+            var mimeType = response.getResponseHeader('Content-Type');
+            var body;
+            if (getEtag) {
+              revision = response.getResponseHeader('ETag');
+            } else {
+              revision = response.status === 200 ? fakeRevision : undefined;
+            }
+
+            if ((! mimeType) || mimeType.match(/charset=binary/)) {
+              RS.WireClient.readBinaryData(response.response, mimeType, function(result) {
+                promise.fulfill(response.status, result, mimeType, revision);
+              });
+            } else {
+              if (mimeType && mimeType.match(/^application\/json/)) {
+                body = JSON.parse(response.responseText);
+              } else {
+                body = response.responseText;
+              }
+              promise.fulfill(response.status, body, mimeType, revision);
+            }
+          }
+        }
+      });
+      return promise;
+    },
+
     configure: function(userAddress, href, storageApi, token) {
       if (typeof(userAddress) !== 'undefined') {
         this.userAddress = userAddress;
@@ -288,7 +297,7 @@
       } else if (options.ifNoneMatch) {
         var oldRev = this._revisionCache[path];
       }
-      var promise = request('GET', this.href + cleanPath(path), this.token, headers,
+      var promise = this._request('GET', this.href + cleanPath(path), this.token, headers,
                             undefined, this.supportsRevs, this._revisionCache[path]);
       if (!isFolder(path)) {
         return promise;
@@ -352,7 +361,7 @@
           headers['If-None-Match'] = addQuotes(options.ifNoneMatch);
         }
       }
-      return request('PUT', this.href + cleanPath(path), this.token,
+      return this._request('PUT', this.href + cleanPath(path), this.token,
                      headers, body, this.supportsRevs);
     },
 
@@ -367,7 +376,7 @@
           headers['If-Match'] = addQuotes(options.ifMatch);
         }
       }
-      return request('DELETE', this.href + cleanPath(path), this.token,
+      return this._request('DELETE', this.href + cleanPath(path), this.token,
                      headers,
                      undefined, this.supportsRevs);
     }
