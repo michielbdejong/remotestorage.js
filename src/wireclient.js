@@ -107,11 +107,7 @@
      *   fired when the wireclient connect method realizes that it is
      *   in posession of a token and a href
      **/
-<<<<<<< HEAD
-    RS.eventHandling(this, 'change', 'connected', 'not-connected');
-=======
-    RS.eventHandling(this, 'change', 'connected', 'wire-busy', 'wire-done');
->>>>>>> rename-busy-events
+    RS.eventHandling(this, 'change', 'connected', 'not-connected', 'wire-busy', 'wire-done');
 
     onErrorCb = function(error){
       if (error instanceof RemoteStorage.Unauthorized) {
