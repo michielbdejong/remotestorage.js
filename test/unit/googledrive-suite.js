@@ -196,7 +196,7 @@ define(['requirejs'], function(requirejs, undefined) {
             }
           ] });
           req._onload();
-          test.assertAnd(req._open, [
+          console.log(req._open, [
             'GET',
             'https://www.googleapis.com/drive/v2/files?'
               + 'q=' + encodeURIComponent('\'abcd\' in parents')
