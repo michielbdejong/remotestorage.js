@@ -170,13 +170,13 @@ define([], function() {
     },
 
     _wrapBusyDone: function(result) {
-      this._emit('wire-busy', 'wrapped');
+      this._emit('wire-busy', {wrapped: true });
       return result.then(function() {
         var promise = promising();
-        this._emit('wire-done', 'wrapped', true);
+        this._emit('wire-done', {wrapped: true, success: true });
         return promise.fulfill.apply(promise, arguments);
       }.bind(this), function(err) {
-        this._emit('wire-done', 'wrapped', false);
+        this._emit('wire-done', { wrapped: true, success: false });
         throw err;
       }.bind(this));
     }
@@ -1966,17 +1966,19 @@ RemoteStorage.Assets = {
     this.rs.on('disconnected', stateSetter(this, 'initial'));
     this.rs.on('connecting', stateSetter(this, 'authing'));
     this.rs.on('authing', stateSetter(this, 'authing'));
-    this.rs.on('wire-busy', function(evt) {
-      if(flashFor(evt)) {
-        this.requestsToFlashFor++;
-        stateSetter(this, 'busy')();
-      }
-    });
-    this.rs.on('wire-done', function(evt) {
-      if(flashFor(evt) && this.requestsToFlashFor === 0) {
-        stateSetter(this, 'connected')();
-      }
-    });
+    if(this.rs.remote) {
+      this.rs.remote.on('wire-busy', function(evt) {
+        if(flashFor(evt)) {
+          this.requestsToFlashFor++;
+          stateSetter(this, 'busy')();
+        }
+      });
+      this.rs.remote.on('wire-done', function(evt) {
+        if(flashFor(evt) && this.requestsToFlashFor === 0) {
+          stateSetter(this, 'connected')();
+        }
+      });
+    }
     this.rs.on('error', errorsHandler(this) );
     if (hasLocalStorage) {
       var state = localStorage[LS_STATE_KEY];
