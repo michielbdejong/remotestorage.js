@@ -5101,13 +5101,15 @@ Math.uuid = function (len, radix) {
       var cursorReq = transaction.objectStore('nodes').openCursor();
       cursorReq.onsuccess = function(evt) {
         var cursor = evt.target.result;
-        if (cursor && !parsePath(cursor.value.path).isFolder) {
-          this._emit('change', {
-            path: cursor.value.path,
-            origin: 'local',
-            oldValue: undefined,
-            newValue: cursor.value.body
-          });
+        if (cursor) {
+          if (!parsePath(cursor.value.path).isFolder) {
+            this._emit('change', {
+              path: cursor.value.path,
+              origin: 'local',
+              oldValue: undefined,
+              newValue: cursor.value.body
+            });
+          }
           cursor.continue();
         }
       }.bind(this);
