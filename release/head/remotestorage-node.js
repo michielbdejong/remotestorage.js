@@ -169,13 +169,13 @@
     },
 
     _wrapBusyDone: function(result) {
-      this._emit('wire-busy', 'wrapped');
+      this._emit('wire-busy', {wrapped: true });
       return result.then(function() {
         var promise = promising();
-        this._emit('wire-done', 'wrapped', true);
+        this._emit('wire-done', {wrapped: true, success: true });
         return promise.fulfill.apply(promise, arguments);
       }.bind(this), function(err) {
-        this._emit('wire-done', 'wrapped', false);
+        this._emit('wire-done', { wrapped: true, success: false });
         throw err;
       }.bind(this));
     }
@@ -4168,10 +4168,24 @@ Math.uuid = function (len, radix) {
     };
   }
 
+  function addExistingContentTypes(store, path, addingItems, cb) {
+    getMetas(store, path, function(existingItems) {
+      var i;
+      for (i in addingItems) {
+        if (!addingItems[i]['Content-Type'] && existingItems[i] && existingItems[i]['Content-Type']) {
+          addingItems[i]['Content-Type'] = existingItems[i]['Content-Type'];
+        }
+      }
+      cb(addingItems);
+    });
+  }
+
   function setMetas(store, path, items) {
-    store.put({
-      path: path,
-      items: items
+    addExistingContentTypes(store, path, items, function(newItems) {
+      store.put({
+        path: path,
+        items: newItems
+      });
     });
   }
     
